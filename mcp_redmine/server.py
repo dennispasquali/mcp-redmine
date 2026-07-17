@@ -1,3 +1,4 @@
+import uvicorn
 import os, yaml, pathlib, json, uuid
 from urllib.parse import urljoin
 from fastapi import FastAPI, Request
@@ -281,9 +282,13 @@ def main():
     args = parser.parse_args()
 
     if args.transport == "sse":
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-    mcp.run(transport=args.transport)
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port
+        )
+    else:
+        mcp.run(transport=args.transport)
 
 if __name__ == "__main__":
     main()

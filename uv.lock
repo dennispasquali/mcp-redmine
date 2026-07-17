@@ -601,6 +601,7 @@ dependencies = [
     { name = "mcp", extra = ["cli"] },
     { name = "openapi-core" },
     { name = "pyyaml" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -616,6 +617,7 @@ requires-dist = [
     { name = "mcp", extras = ["cli"], specifier = ">=1.9.0" },
     { name = "openapi-core", specifier = ">=0.19.4" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "uvicorn", specifier = ">=0.30.0" },
 ]
 
 [package.metadata.requires-dev]
