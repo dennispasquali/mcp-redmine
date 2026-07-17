@@ -52,6 +52,7 @@ def request(path: str, method: str = 'get', data: dict = None, params: dict = No
         'Content-Type': content_type,
         **REDMINE_HEADERS
     }
+    print("Redmine api key: %s" % REDMINE_API_KEY)
     get_logger(__name__).info("Redmine api key: %s", REDMINE_API_KEY)
     url = urljoin(REDMINE_URL, path.lstrip('/'))
 
@@ -139,7 +140,8 @@ async def set_token(request: Request):
 
     data = await request.json()
     REDMINE_API_KEY = data["token"]
-
+    print("Redmine api key: %s" % REDMINE_API_KEY)
+    get_logger(__name__).info("Redmine api key: %s", REDMINE_API_KEY)
     return {
         "ok": True
     }
