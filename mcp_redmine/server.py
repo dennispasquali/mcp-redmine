@@ -52,6 +52,7 @@ def request(path: str, method: str = 'get', data: dict = None, params: dict = No
         'Content-Type': content_type,
         **REDMINE_HEADERS
     }
+    get_logger(__name__).info("Redmine api key: %s", REDMINE_API_KEY)
     url = urljoin(REDMINE_URL, path.lstrip('/'))
 
     try:
