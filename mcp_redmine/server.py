@@ -1,5 +1,6 @@
 import os, yaml, pathlib, json, uuid
 from urllib.parse import urljoin
+from fastapi import FastAPI
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -16,7 +17,7 @@ with open(current_dir / 'redmine_openapi.yml') as f:
 
 # Constants from environment
 REDMINE_URL = os.environ['REDMINE_URL'].rstrip('/') + '/'  # Normalize to always end with /
-REDMINE_API_KEY = os.environ['REDMINE_API_KEY']
+REDMINE_API_KEY = ""
 REDMINE_RESPONSE_FORMAT = os.environ.get('REDMINE_RESPONSE_FORMAT', 'yaml').lower()
 
 # Custom headers (format: "Header1: Value1, Header2: Value2")
@@ -124,9 +125,27 @@ def validate_path(file_path: str, must_exist: bool = True) -> tuple[str | None, 
     return None, path
 
 
+
+
 # Tools
 mcp = FastMCP("Redmine MCP server")
 get_logger(__name__).info(f"Starting MCP Redmine version {VERSION}")
+
+app = FastAPI()
+
+@app.post("/set-token")
+async def set_token(request: Request):
+    global REDMINE_API_KEY
+
+    data = await request.json()
+    REDMINE_API_KEY = data["token"]
+
+    return {
+        "ok": True
+    }
+
+
+app.mount("/", mcp.sse_app())
 
 @mcp.tool(description="""
 Make a request to the Redmine API
