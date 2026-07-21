@@ -47,6 +47,9 @@ else:
 # Core
 def request(path: str, method: str = 'get', data: dict = None, params: dict = None,
             content_type: str = 'application/json', content: bytes = None,token: str=None) -> dict:
+    
+    print("Redmine api key: %s" % token)
+    get_logger(__name__).info("Redmine api key: %s", token)
     headers = {
         'X-Redmine-API-Key': token,
         'Content-Type': content_type,
