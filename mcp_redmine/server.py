@@ -1,7 +1,6 @@
-import uvicorn
 import os, yaml, pathlib, json, uuid
 from urllib.parse import urljoin
-from fastapi import FastAPI, Request
+
 import httpx
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
@@ -17,7 +16,7 @@ with open(current_dir / 'redmine_openapi.yml') as f:
 
 # Constants from environment
 REDMINE_URL = os.environ['REDMINE_URL'].rstrip('/') + '/'  # Normalize to always end with /
-REDMINE_API_KEY = ""
+
 REDMINE_RESPONSE_FORMAT = os.environ.get('REDMINE_RESPONSE_FORMAT', 'yaml').lower()
 
 # Custom headers (format: "Header1: Value1, Header2: Value2")
@@ -47,14 +46,12 @@ else:
 
 # Core
 def request(path: str, method: str = 'get', data: dict = None, params: dict = None,
-            content_type: str = 'application/json', content: bytes = None) -> dict:
+            content_type: str = 'application/json', content: bytes = None,token: str=None) -> dict:
     headers = {
-        'X-Redmine-API-Key': REDMINE_API_KEY,
+        'X-Redmine-API-Key': token,
         'Content-Type': content_type,
         **REDMINE_HEADERS
     }
-    print("Redmine api key: %s" % REDMINE_API_KEY)
-    get_logger(__name__).info("Redmine api key: %s", REDMINE_API_KEY)
     url = urljoin(REDMINE_URL, path.lstrip('/'))
 
     try:
@@ -127,28 +124,9 @@ def validate_path(file_path: str, must_exist: bool = True) -> tuple[str | None, 
     return None, path
 
 
-
-
 # Tools
 mcp = FastMCP("Redmine MCP server")
 get_logger(__name__).info(f"Starting MCP Redmine version {VERSION}")
-
-app = FastAPI()
-
-@app.post("/set-token")
-async def set_token(request: Request):
-    global REDMINE_API_KEY
-
-    data = await request.json()
-    REDMINE_API_KEY = data["token"]
-    print("Redmine api key: %s" % REDMINE_API_KEY)
-    get_logger(__name__).info("Redmine api key: %s", REDMINE_API_KEY)
-    return {
-        "ok": True
-    }
-
-
-app.mount("/", mcp.sse_app())
 
 @mcp.tool(description="""
 Make a request to the Redmine API
@@ -282,13 +260,9 @@ def main():
     args = parser.parse_args()
 
     if args.transport == "sse":
-        uvicorn.run(
-            app,
-            host=args.host,
-            port=args.port
-        )
-    else:
-        mcp.run(transport=args.transport)
+        mcp.settings.host = args.host
+        mcp.settings.port = args.port
+    mcp.run(transport=args.transport)
 
 if __name__ == "__main__":
     main()
