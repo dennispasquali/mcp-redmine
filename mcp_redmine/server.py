@@ -1,8 +1,7 @@
 import os, yaml, pathlib, json, uuid
 from urllib.parse import urljoin
-
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
 ### Constants ###
@@ -44,10 +43,13 @@ else:
     REDMINE_REQUEST_INSTRUCTIONS = ""
 
 
+
+
 # Core
-def request(path: str, method: str = 'get', data: dict = None, params: dict = None,
-            content_type: str = 'application/json', content: bytes = None,token: str=None) -> dict:
-    
+def request(path: str, method: str = 'get', data: dict = None, params: dict = None, content_type: str = 'application/json', content: bytes = None,token: str=None) -> dict:
+
+       
+     
     print("Redmine api key: %s" % token)
     get_logger(__name__).info("Redmine api key: %s", token)
     headers = {
@@ -85,7 +87,10 @@ def request(path: str, method: str = 'get', data: dict = None, params: dict = No
                 body = None
 
         return {"status_code": status_code, "body": body, "error": f"{e.__class__.__name__}: {e}"}
-        
+
+
+
+
 def format_response(obj):
     """Format response as YAML or JSON based on REDMINE_RESPONSE_FORMAT env var."""
     if REDMINE_RESPONSE_FORMAT == 'json':
@@ -178,7 +183,7 @@ def redmine_paths_info(path_templates: list) -> str:
     return format_response(info)
 
 @mcp.tool()
-def redmine_upload(file_path: str, description: str = None) -> str:
+def redmine_upload(ctx: Context,file_path: str, description: str = None) -> str:
     """
     Upload a file to Redmine and get a token for attachment
 
@@ -195,6 +200,9 @@ def redmine_upload(file_path: str, description: str = None) -> str:
         return format_response({"status_code": 0, "body": None, "error": error})
 
     try:
+        at = ctx.request_context.request
+
+        authorization = at.headers.get("Authorization")
         params = {'filename': path.name}
         if description:
             params['description'] = description
@@ -203,13 +211,13 @@ def redmine_upload(file_path: str, description: str = None) -> str:
             file_content = f.read()
 
         result = request(path='uploads.json', method='post', params=params,
-                         content_type='application/octet-stream', content=file_content)
+                         content_type='application/octet-stream', content=file_content, token=authorization)
         return format_response(result)
     except Exception as e:
         return format_response({"status_code": 0, "body": None, "error": f"{e.__class__.__name__}: {e}"})
 
 @mcp.tool()
-def redmine_download(attachment_id: int, save_path: str, filename: str = None) -> str:
+def redmine_download(ctx: Context,attachment_id: int, save_path: str, filename: str = None) -> str:
     """
     Download an attachment from Redmine and save it to a local file
 
@@ -230,15 +238,18 @@ def redmine_download(attachment_id: int, save_path: str, filename: str = None) -
         return format_response({"status_code": 0, "body": None, "error": f"Path can't be a directory: {save_path}"})
 
     try:
+        at = ctx.request_context.request
+
+        authorization = at.headers.get("Authorization")
         if not filename:
-            attachment_response = request(f"attachments/{attachment_id}.json", "get")
+            attachment_response = request(f"attachments/{attachment_id}.json", "get",token=authorization)
             if attachment_response["status_code"] != 200:
                 return format_response(attachment_response)
 
             filename = attachment_response["body"]["attachment"]["filename"]
 
         response = request(f"attachments/download/{attachment_id}/{filename}", "get",
-                           content_type="application/octet-stream")
+                           content_type="application/octet-stream", token=authorization)
         if response["status_code"] != 200 or not response["body"]:
             return format_response(response)
 
