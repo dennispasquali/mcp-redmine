@@ -150,7 +150,12 @@ Returns:
 
 {}""".format(REDMINE_REQUEST_INSTRUCTIONS).strip())
     
-def redmine_request(path: str, method: str = 'get', data: dict = None, params: dict = None) -> str:
+def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None) -> str:
+    print(ctx)
+    print(vars(ctx))
+    print(vars(ctx.request_context))
+    print(vars(ctx.request_context.request))
+
     return wrap_insecure_content(format_response(request(path, method=method, data=data, params=params)))
 
 @mcp.tool()
