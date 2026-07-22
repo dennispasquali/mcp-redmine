@@ -151,7 +151,7 @@ Returns:
 {}""".format(REDMINE_REQUEST_INSTRUCTIONS).strip())
     
 def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None) -> str:
-    get_logger(__name__).info.info(
+    get_logger(__name__).info(
     "headers=%s",
     dict(ctx.request_context.request.headers)
     )
