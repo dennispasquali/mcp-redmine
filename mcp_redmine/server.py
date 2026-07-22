@@ -151,10 +151,10 @@ Returns:
 {}""".format(REDMINE_REQUEST_INSTRUCTIONS).strip())
     
 def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None) -> str:
-    print(ctx)
-    print(vars(ctx))
-    print(vars(ctx.request_context))
-    print(vars(ctx.request_context.request))
+    get_logger(__name__).info.info(
+    "headers=%s",
+    dict(ctx.request_context.request.headers)
+    )
 
     return wrap_insecure_content(format_response(request(path, method=method, data=data, params=params)))
 
