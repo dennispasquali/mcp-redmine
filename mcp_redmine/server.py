@@ -150,10 +150,10 @@ Returns:
 
 {}""".format(REDMINE_REQUEST_INSTRUCTIONS).strip())
     
-def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None,_token: str=None) -> str:
-    get_logger(__name__).info(f"TOKEN ARRIVATO: {_token}")
+def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None,token: str=None) -> str:
+    get_logger(__name__).info(f"TOKEN ARRIVATO: {token}")
 
-    return wrap_insecure_content(format_response(request(path, method=method, data=data, params=params,token=_token)))
+    return wrap_insecure_content(format_response(request(path, method=method, data=data, params=params,token=token)))
 
 @mcp.tool()
 def redmine_paths_list() -> str:
