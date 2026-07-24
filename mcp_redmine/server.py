@@ -132,6 +132,34 @@ def validate_path(file_path: str, must_exist: bool = True) -> tuple[str | None, 
     return None, path
 
 
+def getToken(ctx: Context):
+    http_request = getattr(ctx.request_context, "request", None)
+
+    if http_request is None or not hasattr(http_request, "headers"):
+        raise RuntimeError(
+            "Richiesta HTTP non disponibile. "
+            "Il token personale funziona solo tramite SSE o Streamable HTTP."
+        )
+
+    api_key = http_request.headers.get("x-redmine-api-key", "").strip()
+
+   
+    if not api_key:
+        authorization = http_request.headers.get("authorization", "").strip()
+
+        scheme, separator, value = authorization.partition(" ")
+
+        if separator and scheme.lower() == "bearer":
+            api_key = value.strip()
+
+    if not api_key:
+        raise ValueError(
+            "Token Redmine mancante. "
+            "Configura la chiave personale nelle impostazioni MCP di LibreChat."
+        )
+
+    return api_key
+
 # Tools
 mcp = FastMCP("Redmine MCP server")
 get_logger(__name__).info(f"Starting MCP Redmine version {VERSION}")
@@ -150,7 +178,8 @@ Returns:
 
 {}""".format(REDMINE_REQUEST_INSTRUCTIONS).strip())
     
-def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None,token: str=None) -> str:
+def redmine_request(ctx: Context,path: str, method: str = 'get', data: dict = None, params: dict = None) -> str:
+    token=getToken(ctx)
     get_logger(__name__).info(f"TOKEN ARRIVATO: {token}")
 
     return wrap_insecure_content(format_response(request(path, method=method, data=data, params=params,token=token)))
@@ -202,9 +231,9 @@ def redmine_upload(ctx: Context,file_path: str, description: str = None) -> str:
         return format_response({"status_code": 0, "body": None, "error": error})
 
     try:
-        at = ctx.request_context.request
+        token=getToken(ctx)
 
-        authorization = at.headers.get("Authorization")
+        
         params = {'filename': path.name}
         if description:
             params['description'] = description
@@ -213,7 +242,7 @@ def redmine_upload(ctx: Context,file_path: str, description: str = None) -> str:
             file_content = f.read()
 
         result = request(path='uploads.json', method='post', params=params,
-                         content_type='application/octet-stream', content=file_content, token=authorization)
+                         content_type='application/octet-stream', content=file_content, token=token)
         return format_response(result)
     except Exception as e:
         return format_response({"status_code": 0, "body": None, "error": f"{e.__class__.__name__}: {e}"})
@@ -240,18 +269,18 @@ def redmine_download(ctx: Context,attachment_id: int, save_path: str, filename: 
         return format_response({"status_code": 0, "body": None, "error": f"Path can't be a directory: {save_path}"})
 
     try:
-        at = ctx.request_context.request
+        token = getToken(ctx)
 
         authorization = at.headers.get("Authorization")
         if not filename:
-            attachment_response = request(f"attachments/{attachment_id}.json", "get",token=authorization)
+            attachment_response = request(f"attachments/{attachment_id}.json", "get",token=token)
             if attachment_response["status_code"] != 200:
                 return format_response(attachment_response)
 
             filename = attachment_response["body"]["attachment"]["filename"]
 
         response = request(f"attachments/download/{attachment_id}/{filename}", "get",
-                           content_type="application/octet-stream", token=authorization)
+                           content_type="application/octet-stream", token=token)
         if response["status_code"] != 200 or not response["body"]:
             return format_response(response)
 
